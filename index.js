@@ -20,8 +20,29 @@ module.exports = function (componentName, remoteOriginOfRepo4) {
       console.log('Relavent Directories renamed');
       return Promise.resolve();
     })
+    // .then(() =>  sh(
+    //   `find "./${componentName}" -type f -name "*.yaml" -o -name "*.tf" -o -name "*.json" -o -name "*.tsx" -o -name "*.html" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
+    // ))
     .then(() =>  sh(
-        `find "./${componentName}" -type f \( -name "*.yaml" -o -name "*.tf" -o -name "*.json" -o -name "*.tsx" -o -name "*.html" \) -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} \;`
+      `find "./${componentName}" -type f -name "*.yaml" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
+    ))
+    .then(() =>  sh(
+      `find "./${componentName}" -type f -name "*.tf" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
+    ))
+    .then(() =>  sh(
+      `find "./${componentName}" -type f -name "*.json"  -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
+    ))
+    .then(() =>  sh(
+      `find "./${componentName}" -type f -name "*.tsx"  -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
+    ))
+    .then(() =>  sh(
+      `find "./${componentName}" -type f -name "*.yaml" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
+    ))
+    .then(() =>  sh(
+      `find "./${componentName}" -type f -name "*.tf" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
+    ))
+    .then(() =>  sh(
+      `find "./${componentName}" -type f -name "*.html" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
     ))
     .then(() => {
       console.log('# Replaced the placeholders in files');
@@ -33,9 +54,5 @@ module.exports = function (componentName, remoteOriginOfRepo4) {
     .then(() => {
       console.log('New OC Project created!');
       return Promise.resolve();
-    })
-    .catch((err) => {
-      console.log('Everything failed')
-      return Promise.reject(err);
     })
 }
