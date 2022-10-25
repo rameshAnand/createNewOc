@@ -2,7 +2,7 @@
 
 const sh = require('shell-exec').default;
 
-module.exports = function (componentName, remoteOriginOfRepo4) {
+module.exports = function (componentName, remoteOriginOfRepo) {
 
   if (!componentName && typeof componentName !== 'string') {
     return Promise.reject(new Error('Invalid OC name'))
@@ -20,9 +20,6 @@ module.exports = function (componentName, remoteOriginOfRepo4) {
       console.log('Relavent Directories renamed');
       return Promise.resolve();
     })
-    // .then(() =>  sh(
-    //   `find "./${componentName}" -type f -name "*.yaml" -o -name "*.tf" -o -name "*.json" -o -name "*.tsx" -o -name "*.html" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    // ))
     .then(() =>  sh(
       `find "./${componentName}" -type f -name "*.yaml" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
     ))
@@ -34,6 +31,9 @@ module.exports = function (componentName, remoteOriginOfRepo4) {
     ))
     .then(() =>  sh(
       `find "./${componentName}" -type f -name "*.tsx"  -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
+    ))
+    .then(() =>  sh(
+      `find "./${componentName}" -type f -name "*.ts"  -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
     ))
     .then(() =>  sh(
       `find "./${componentName}" -type f -name "*.yaml" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
@@ -52,7 +52,17 @@ module.exports = function (componentName, remoteOriginOfRepo4) {
         `find . -type d -name "*ocboilerplate*" | while read f; do mv $f $(echo $f | sed "s/ocboilerplate/${componentName}/"); done`
     ))
     .then(() => {
+      if (!remoteOriginOfRepo) return Promise.resolve();
+
+      return sh(
+        `cd ${componentName} && git checkout -b settingUpProject && git remote remove origin && git remote add origin ${remoteOriginOfRepo} && git add * && git commit -m 'First commit' && git push --set-upstream origin settingUpProject`
+      )
+    })
+    .then(() => {
       console.log('New OC Project created!');
       return Promise.resolve();
+    })
+    .catch((err) => {
+      console.error(err)
     })
 }

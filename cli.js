@@ -13,6 +13,5 @@ createNewOc(name, repo)
     console.log(`${current} created`)
 })
 .catch((error) => {
-    console.log(`Something Went wrong.`)
     verbose && console.error(error)
 })
