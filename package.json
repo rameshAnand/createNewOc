@@ -23,6 +23,8 @@
   "homepage": "https://github.com/rameshAnand/createNewOc#readme",
   "dependencies": {
     "get-them-args": "^1.3.2",
-    "shell-exec": "^1.1.2"
+    "replace": "^1.2.2",
+    "shell-exec": "^1.1.2",
+    "shelljs": "^0.8.5"
   }
 }

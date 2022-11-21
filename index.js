@@ -1,68 +1,63 @@
 'use strict'
 
+const path = require('path');
+const fs = require('fs');
+const replace = require("replace");
 const sh = require('shell-exec').default;
 
+var FIND_STR = 'ocboilerplate';
+
+
 module.exports = function (componentName, remoteOriginOfRepo) {
+
+  console.log('process.platform',process.platform)
 
   if (!componentName && typeof componentName !== 'string') {
     return Promise.reject(new Error('Invalid OC name'))
   }
 
-  return sh('git clone git@ssh.dev.azure.com:v3/guestlinelabs/Search/ocboilerplate')
+  return sh('git clone git@ssh.dev.azure.com:v3/guestlinelabs/Search/ocboilerplate') 
     .then(() => {
-      console.log('Cloned the boiler plate');
       return Promise.resolve();
     })
-    .then(() => sh(
-        `find . -type d -name "*ocboilerplate*" | while read f; do mv $f $(echo $f | sed "s/ocboilerplate/${componentName}/"); done`
-    ))
     .then(() => {
+      fs.renameSync('./ocboilerplate', `./${componentName}`); 
+      console.log('renamed main folder');
+      return Promise.resolve();
+    })
+    .then(() => {
+      renameFilesAndFolders( `./${componentName}`, componentName);
       console.log('Relavent Directories renamed');
       return Promise.resolve();
     })
-    .then(() =>  sh(
-      `find "./${componentName}" -type f -name "*.yaml" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    ))
-    .then(() =>  sh(
-      `find "./${componentName}" -type f -name "*.tf" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    ))
-    .then(() =>  sh(
-      `find "./${componentName}" -type f -name "*.json"  -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    ))
-    .then(() =>  sh(
-      `find "./${componentName}" -type f -name "*.tsx"  -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    ))
-    .then(() =>  sh(
-      `find "./${componentName}" -type f -name "*.ts"  -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    ))
-    .then(() =>  sh(
-      `find "./${componentName}" -type f -name "*.yaml" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    ))
-    .then(() =>  sh(
-      `find "./${componentName}" -type f -name "*.tf" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    ))
-    .then(() =>  sh(
-      `find "./${componentName}" -type f -name "*.html" -exec sed -i '' "s/ocboilerplate/${componentName}/g" {} +`
-    ))
     .then(() => {
-      console.log('# Replaced the placeholders in files');
-      return Promise.resolve();
-    })
-    .then(() => sh(
-        `find . -type d -name "*ocboilerplate*" | while read f; do mv $f $(echo $f | sed "s/ocboilerplate/${componentName}/"); done`
-    ))
-    .then(() => {
-      if (!remoteOriginOfRepo) return Promise.resolve();
-
-      return sh(
-        `cd ${componentName} && git checkout -b settingUpProject && git remote remove origin && git remote add origin ${remoteOriginOfRepo} && git add * && git commit -m 'First commit' && git push --set-upstream origin settingUpProject`
-      )
-    })
-    .then(() => {
-      console.log('New OC Project created!');
+      replace({
+        regex: "ocboilerplate",
+        replacement: componentName,
+        paths: [`./${componentName}/`],
+        recursive: true,
+        silent: false,
+      });
+      console.log('Files contents renamed');
       return Promise.resolve();
     })
     .catch((err) => {
       console.error(err)
     })
+};
+
+const renameFilesAndFolders = async (dirPath, componentName) => {
+  const paths = fs.readdirSync(dirPath, {withFileTypes: true});
+  
+  paths.forEach((dirent) => {
+    let currentPath = path.join(dirPath, dirent.name);
+    let newPath = null;
+
+    if(dirent.name.includes('ocboilerplate')){
+      newPath=currentPath.replace('ocboilerplate', componentName)
+      fs.renameSync(currentPath, newPath)
+    }
+
+    if(dirent.isDirectory()) renameFilesAndFolders(newPath ?? currentPath, componentName);
+  })
 }
