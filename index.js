@@ -5,7 +5,7 @@ const fs = require('fs');
 const replace = require("replace");
 const sh = require('shell-exec').default;
 
-var FIND_STR = 'ocboilerplate';
+var TEMPLATE_STR = 'ocboilerplate';
 
 
 module.exports = function (componentName, remoteOriginOfRepo) {
@@ -18,28 +18,26 @@ module.exports = function (componentName, remoteOriginOfRepo) {
 
   return sh('git clone git@ssh.dev.azure.com:v3/guestlinelabs/Search/ocboilerplate') 
     .then(() => {
-      return Promise.resolve();
-    })
-    .then(() => {
+      console.log('#Start Renaming main folder');
       fs.renameSync('./ocboilerplate', `./${componentName}`); 
-      console.log('renamed main folder');
+      console.log('#Renamed main folder');
       return Promise.resolve();
     })
     .then(() => {
       renameFilesAndFolders( `./${componentName}`, componentName);
-      console.log('Relavent Directories renamed');
+      console.log('#Renamed files and folders');
       return Promise.resolve();
     })
     .then(() => {
       replace({
-        regex: "ocboilerplate",
+        regex: TEMPLATE_STR,
         replacement: componentName,
         paths: [`./${componentName}/`],
         recursive: true,
         silent: false,
       });
-      console.log('Files contents renamed');
-      return Promise.resolve();
+
+      console.log('#Replaced all instances of ocboilerplate with new component name');
     })
     .catch((err) => {
       console.error(err)
