@@ -9,41 +9,49 @@ const sh = require('shell-exec').default;
 const TEMPLATE_STR = 'ocboilerplate';
 const REMOTE_REPO = 'git@ssh.dev.azure.com:v3/guestlinelabs/Search/ocboilerplate';
 
-module.exports = async function createOc(componentName, remoteOriginOfRepo = REMOTE_REPO) {
+const noop = () => {};
+const emptyLogger = {
+  log: noop,
+  info: noop,
+  warn: noop,
+  error: noop
+};
+
+module.exports = async function createOc({
+  componentName,
+  remoteOriginOfRepo = REMOTE_REPO,
+  logger = emptyLogger
+}) {
   if (!componentName && typeof componentName !== 'string') {
     throw new Error('Invalid OC name');
   }
   const componentPath = path.join(process.cwd(), componentName);
 
-  console.log('');
-  console.log(`Creating a new OC in ${chalk.green(componentPath)}`);
+  logger.log('');
+  logger.log(`Creating a new OC in ${chalk.green(componentPath)}`);
   await sh(`git clone ${remoteOriginOfRepo}`);
 
-  try {
-    console.log('Renaming folders and files from the template.');
-    await rename(`./${TEMPLATE_STR}`, `./${componentName}`);
+  logger.log('Renaming folders and files from the template.');
+  await rename(`./${TEMPLATE_STR}`, `./${componentName}`);
 
-    renameFilesAndFolders(`./${componentName}`, componentName);
+  renameFilesAndFolders(`./${componentName}`, componentName);
 
-    replace({
-      regex: TEMPLATE_STR,
-      replacement: componentName,
-      paths: [`./${componentName}/`],
-      recursive: true,
-      silent: true
-    });
+  replace({
+    regex: TEMPLATE_STR,
+    replacement: componentName,
+    paths: [`./${componentName}/`],
+    recursive: true,
+    silent: true
+  });
 
-    console.log('');
-    console.log(`All done! OC created at ${componentPath}`);
-    console.log('Start developing by typing:');
-    console.log('');
-    console.log(`  ${chalk.cyan('cd')} ${componentName}`);
-    console.log(`  ${chalk.cyan('npm start')}`);
-    console.log('');
-    console.log('Have fun!');
-  } catch (err) {
-    console.error(err.message ?? err);
-  }
+  logger.log('');
+  logger.log(`All done! OC created at ${componentPath}`);
+  logger.log('Start developing by typing:');
+  logger.log('');
+  logger.log(`  ${chalk.cyan('cd')} ${componentName}`);
+  logger.log(`  ${chalk.cyan('npm start')}`);
+  logger.log('');
+  logger.log('Have fun!');
 };
 
 const renameFilesAndFolders = async (dirPath, componentName) => {
