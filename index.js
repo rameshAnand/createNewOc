@@ -17,6 +17,19 @@ const emptyLogger = {
   error: noop
 };
 
+async function hasSshAccess(remote) {
+  try {
+    const res = await sh(`git ls-remote ${remote}`);
+    return res.code === 0;
+  } catch {
+    return false;
+  }
+}
+
+function isRemoteSsh(remote) {
+  return remote.includes('git@ssh');
+}
+
 module.exports = async function createOc({
   componentName,
   remoteOriginOfRepo = REMOTE_REPO,
@@ -25,9 +38,25 @@ module.exports = async function createOc({
   if (!componentName && typeof componentName !== 'string') {
     throw new Error('Invalid OC name');
   }
+  logger.log('');
+
+  if (isRemoteSsh(remoteOriginOfRepo)) {
+    if (!(await hasSshAccess(remoteOriginOfRepo))) {
+      logger.warn(
+        chalk.yellow("It seems you don't have access to the remote repository of the template.")
+      );
+      logger.warn(chalk.yellow('Maybe you forgot to add your SSH keys to the repository?'));
+      logger.log('');
+      logger.warn(
+        `${chalk.bold(
+          'Information here'
+        )}: https://git-scm.com/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key`
+      );
+    }
+  }
+
   const componentPath = path.join(process.cwd(), componentName);
 
-  logger.log('');
   logger.log(`Creating a new OC in ${chalk.green(componentPath)}`);
   await sh(`git clone ${remoteOriginOfRepo}`);
 
