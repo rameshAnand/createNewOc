@@ -30,7 +30,7 @@ module.exports = async function createOc(componentName, remoteOriginOfRepo = REM
       replacement: componentName,
       paths: [`./${componentName}/`],
       recursive: true,
-      silent: true,
+      silent: true
     });
 
     console.log('');
