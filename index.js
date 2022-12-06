@@ -1,10 +1,10 @@
 'use strict';
 
 const chalk = require('chalk');
-const path = require('path');
+const { join } = require('path');
 const { rename, readdir } = require('fs/promises');
 const replace = require('replace');
-const sh = require('shell-exec').default;
+const sh = require('spawn-please');
 
 const TEMPLATE_STR = 'ocboilerplate';
 const REMOTE_REPO = 'git@ssh.dev.azure.com:v3/guestlinelabs/Search/ocboilerplate';
@@ -33,7 +33,8 @@ function isRemoteSsh(remote) {
 module.exports = async function createOc({
   componentName,
   remoteOriginOfRepo = REMOTE_REPO,
-  logger = emptyLogger
+  logger = emptyLogger,
+  cwd = process.cwd()
 }) {
   if (!componentName && typeof componentName !== 'string') {
     throw new Error('Invalid OC name');
@@ -55,20 +56,20 @@ module.exports = async function createOc({
     }
   }
 
-  const componentPath = path.join(process.cwd(), componentName);
+  const componentPath = join(cwd, componentName);
 
   logger.log(`Creating a new OC in ${chalk.green(componentPath)}`);
-  await sh(`git clone ${remoteOriginOfRepo}`);
+  await sh('git', ['clone', remoteOriginOfRepo], { cwd });
 
   logger.log('Renaming folders and files from the template.');
-  await rename(`./${TEMPLATE_STR}`, `./${componentName}`);
+  await rename(join(cwd, TEMPLATE_STR), join(cwd, componentName));
 
-  renameFilesAndFolders(`./${componentName}`, componentName);
+  await renameFilesAndFolders(componentPath, componentName);
 
   replace({
     regex: TEMPLATE_STR,
     replacement: componentName,
-    paths: [`./${componentName}/`],
+    paths: [componentPath],
     recursive: true,
     silent: true
   });
@@ -86,8 +87,10 @@ module.exports = async function createOc({
 const renameFilesAndFolders = async (dirPath, componentName) => {
   const paths = await readdir(dirPath, { withFileTypes: true });
 
+  const dirs = [];
+
   for (const dirent of paths) {
-    let currentPath = path.join(dirPath, dirent.name);
+    let currentPath = join(dirPath, dirent.name);
     let newPath = null;
 
     if (dirent.name.includes(TEMPLATE_STR)) {
@@ -96,7 +99,9 @@ const renameFilesAndFolders = async (dirPath, componentName) => {
     }
 
     if (dirent.isDirectory()) {
-      renameFilesAndFolders(newPath ?? currentPath, componentName);
+      dirs.push(renameFilesAndFolders(newPath ?? currentPath, componentName));
     }
   }
+
+  return Promise.all(dirs);
 };
