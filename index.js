@@ -2,12 +2,14 @@
 
 const chalk = require('chalk');
 const { join } = require('path');
-const { rename, readdir } = require('fs/promises');
+const { rename, readdir, rm } = require('fs/promises');
 const replace = require('replace');
 const sh = require('spawn-please');
 
 const TEMPLATE_STR = 'ocboilerplate';
-const REMOTE_REPO = 'git@ssh.dev.azure.com:v3/guestlinelabs/Search/ocboilerplate';
+const REMOTE_REPO = `git@ssh.dev.azure.com:v3/guestlinelabs/Search/${TEMPLATE_STR}`;
+
+const removeFolder = (dirPath) => rm(dirPath, { recursive: true, force: true });
 
 const noop = () => {};
 const emptyLogger = {
@@ -62,7 +64,11 @@ module.exports = async function createOc({
   await sh('git', ['clone', remoteOriginOfRepo], { cwd });
 
   logger.log('Renaming folders and files from the template.');
-  await rename(join(cwd, TEMPLATE_STR), join(cwd, componentName));
+  await rename(join(cwd, TEMPLATE_STR), componentPath);
+  await removeFolder(join(componentPath, '.git'));
+  // TODO: pick a template from templates folder, move it to the root, and then remove it
+  //       For now just removing it (does not fail) so we can start adding templates there
+  await removeFolder(join(componentPath, 'templates'));
 
   await renameFilesAndFolders(componentPath, componentName);
 
