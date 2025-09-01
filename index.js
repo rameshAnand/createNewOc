@@ -2,7 +2,7 @@
 
 const chalk = require('chalk');
 const { join } = require('path');
-const { rename, readdir, rm } = require('fs/promises');
+const { rename, readdir, rm, readFile, writeFile } = require('fs/promises');
 const replace = require('replace');
 const sh = require('spawn-please');
 
@@ -30,6 +30,14 @@ async function hasSshAccess(remote) {
 
 function isRemoteSsh(remote) {
   return remote.includes('git@ssh');
+}
+
+async function cleanPackageJson(pkgPath) {
+  const pkg = JSON.parse(await readFile(pkgPath, 'utf8'));
+  pkg.description = '';
+  pkg.author = '';
+
+  await writeFile(pkgPath, JSON.stringify(pkg, null, 2));
 }
 
 module.exports = async function createOc({
@@ -64,6 +72,7 @@ module.exports = async function createOc({
   await sh('git', ['clone', remoteOriginOfRepo], { cwd });
 
   logger.log('Renaming folders and files from the template.');
+  await cleanPackageJson(join(cwd, TEMPLATE_STR, 'OpenComponents', TEMPLATE_STR, 'package.json'));
   await rename(join(cwd, TEMPLATE_STR), componentPath);
   await removeFolder(join(componentPath, '.git'));
   // TODO: pick a template from templates folder, move it to the root, and then remove it
